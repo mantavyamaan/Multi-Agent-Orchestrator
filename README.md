@@ -38,16 +38,43 @@ Open **http://localhost:8000** — watch agents work in real-time with live trac
 python -m src.main "Research LangGraph and write a script for it" --verbose
 ```
 
-### Live LLM mode
+### 🧠 Switching to Live LLM Mode (Real AI)
 
-Edit `.env`:
-```env
-AGENT_MODE=live
-MODEL_PROVIDER=openai
-MODEL_NAME=gpt-4o-mini
-OPENAI_API_KEY=sk-...
-```
-Then re-run either command above.
+By default, the application runs in **Mock Mode** (`AGENT_MODE=mock`), which uses a hardcoded, deterministic dummy model that costs nothing and requires no API keys. It is perfect for testing the UI and seeing how the orchestrator graphs route tasks.
+
+To make the agents actually think, write code, and execute your real prompts, you must switch to **Live Mode**.
+
+**Step-by-Step Guide:**
+
+1. **Create the Environment File**
+   If you haven't already, copy the template file to create your own configuration file:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Configure the `.env` File**
+   Open the newly created `.env` file in your code editor and change the following settings:
+   - Change `AGENT_MODE=mock` to `AGENT_MODE=live`.
+   - Ensure `MODEL_PROVIDER` is set to your preferred provider (e.g., `openai`, `anthropic`).
+   - Add your real, active API key for that provider.
+
+   *Example of a working `.env` file for OpenAI:*
+   ```env
+   AGENT_MODE=live
+   MODEL_PROVIDER=openai
+   MODEL_NAME=gpt-4o-mini
+   OPENAI_API_KEY=sk-proj-your-real-api-key-here...
+   ```
+
+3. **Restart the Server**
+   If your FastAPI server is currently running, stop it (press `Ctrl + C` in the terminal). 
+   Then, start it back up:
+   ```bash
+   python -m src.api
+   ```
+
+4. **Verify in the UI**
+   Open `http://localhost:8000`. In the top-left corner of the sidebar, the Mode Badge should now have a green dot and say **"Live · gpt-4o-mini"** (or whichever model you chose). When you submit a task now, the real LLM will process it!
 
 ## Tests
 

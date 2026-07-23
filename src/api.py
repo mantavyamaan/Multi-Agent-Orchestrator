@@ -194,7 +194,8 @@ async def stream_orchestrator(task: str, task_id: str) -> AsyncGenerator[str, No
                 yield json.dumps(data)
 
         # Final state — send timing metadata alongside results
-        final = _graph_app.get_state(config).values
+        final_state = await _graph_app.aget_state(config)
+        final = final_state.values
         elapsed = round(time.monotonic() - start_time, 2)
         yield json.dumps({
             "node": "END",

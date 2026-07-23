@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Multi-Agent Orchestrator — Coordinator-driven hub-and-spoke AI execution graph powered by LangGraph.">
+    <meta name="theme-color" content="#0b0f19">
+    <title>Multi-Agent Orchestrator</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Marked.js — Markdown renderer -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@9/marked.min.js"></script>
+    <!-- DOMPurify — XSS sanitizer (mandatory before innerHTML) -->
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+    <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+    <!-- Animated background -->
+    <div class="bg-canvas" aria-hidden="true">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+        <div class="orb orb-3"></div>
+        <div class="grid-overlay"></div>
+    </div>
+
+    <!-- Toast notification container -->
+    <div id="toast-container" role="status" aria-live="polite"></div>
+
+    <div class="app-shell">
+
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">⬡</div>
+                <span>MAO</span>
+            </div>
+
+            <div class="sidebar-section">
+                <p class="sidebar-label">Mode</p>
+                <div class="mode-badge" id="mode-badge">
+                    <span class="mode-dot"></span>
+                    <span id="mode-text">loading…</span>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <p class="sidebar-label">Agents</p>
+                <div class="agent-cards" id="agent-cards">
+                    <div class="agent-card" id="card-coordinator" data-agent="coordinator">
+                        <div class="agent-icon">🧠</div>
+                        <div class="agent-info">
+                            <p class="agent-name">Coordinator</p>
+                            <p class="agent-status-text">Idle</p>
+                        </div>
+                        <div class="agent-pulse"></div>
+                    </div>
+                    <div class="agent-card" id="card-researcher" data-agent="researcher">
+                        <div class="agent-icon">🔍</div>
+                        <div class="agent-info">
+                            <p class="agent-name">Researcher</p>
+                            <p class="agent-status-text">Idle</p>
+                        </div>
+                        <div class="agent-pulse"></div>
+                    </div>
+                    <div class="agent-card" id="card-coder" data-agent="coder">
+                        <div class="agent-icon">💻</div>
+                        <div class="agent-info">
+                            <p class="agent-name">Coder</p>
+                            <p class="agent-status-text">Idle</p>
+                        </div>
+                        <div class="agent-pulse"></div>
+                    </div>
+                    <div class="agent-card" id="card-reviewer" data-agent="reviewer">
+                        <div class="agent-icon">✅</div>
+                        <div class="agent-info">
+                            <p class="agent-name">Reviewer</p>
+                            <p class="agent-status-text">Idle</p>
+                        </div>
+                        <div class="agent-pulse"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section sidebar-history">
+                <p class="sidebar-label">Recent Runs</p>
+                <div id="history-list" class="history-list">
+                    <p class="history-empty">No runs yet</p>
+                </div>
+            </div>
+        </aside>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <main class="main-content">
+            <header class="top-header">
+                <div class="header-title">
+                    <h1>Multi-Agent Orchestrator</h1>
+                    <p class="subtitle">Coordinator-driven hub-and-spoke execution graph</p>
+                </div>
+                <div class="header-meta" id="run-meta" style="display:none">
+                    <span id="meta-steps">—</span>
+                    <span id="meta-time">—</span>
+                    <span id="meta-status">—</span>
+                </div>
+            </header>
+
+            <!-- Task Input -->
+            <section class="glass-panel input-panel">
+                <form id="task-form" novalidate>
+                    <div class="input-group">
+                        <div class="input-label-row">
+                            <label for="task">Define Objective</label>
+                            <span id="char-counter" class="char-counter">0 / 2000</span>
+                        </div>
+                        <textarea
+                            id="task"
+                            name="task"
+                            rows="4"
+                            maxlength="2000"
+                            placeholder="E.g., Research LangGraph state management and implement a working example script…"
+                        ></textarea>
+                        <div class="input-error hidden" id="input-error"></div>
+                    </div>
+                    <div class="quick-prompts">
+                        <button type="button" class="chip" data-prompt="Research LangGraph and write a minimal working script for it">📖 LangGraph intro</button>
+                        <button type="button" class="chip" data-prompt="Compare Redis and Memcached, then implement a Python caching wrapper">⚡ Caching wrapper</button>
+                        <button type="button" class="chip" data-prompt="Research the best sorting algorithms for large datasets and implement a benchmark in Python">📊 Sort benchmark</button>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" id="run-btn" class="primary-btn">
+                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                            <span id="btn-label">Execute Workflow</span>
+                            <div class="btn-spinner hidden" id="btn-spinner"></div>
+                        </button>
+                        <button type="button" id="abort-btn" class="danger-btn hidden">
+                            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+                            Abort
+                        </button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Execution Trace -->
+            <section class="glass-panel trace-panel hidden" id="trace-panel">
+                <div class="panel-header">
+                    <h2>Execution Trace</h2>
+                    <span class="step-counter" id="step-counter">Step 0</span>
+                </div>
+                <div class="trace-scroll-container">
+                    <div class="trace-container" id="trace-container"></div>
+                </div>
+            </section>
+
+            <!-- Errors (only shown when there are errors) -->
+            <section class="glass-panel error-panel hidden" id="error-panel">
+                <h2>⚠ Execution Errors</h2>
+                <ul id="error-list" class="error-list"></ul>
+            </section>
+
+            <!-- Final Results -->
+            <section class="glass-panel results-panel hidden" id="results-panel">
+                <div class="panel-header">
+                    <h2>Final Results</h2>
+                    <button type="button" class="icon-btn" id="copy-all-btn" title="Copy all results">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="18" height="18"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                        Copy All
+                    </button>
+                </div>
+                <div id="results-content" class="markdown-body"></div>
+            </section>
+        </main>
+    </div>
+
+    <script src="/app.js"></script>
+</body>
+</html>

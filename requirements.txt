@@ -1,0 +1,19 @@
+langgraph>=0.2.60
+langgraph-checkpoint-sqlite>=2.0
+aiosqlite>=0.19
+langchain-core>=0.3.25
+pydantic>=2.8
+pydantic-settings>=2.0
+python-dotenv>=1.0
+pytest>=8.0
+pytest-cov>=4.0
+pytest-asyncio>=0.23
+httpx>=0.25
+fastapi>=0.100.0
+uvicorn>=0.23.0
+sse-starlette>=1.6.5
+slowapi>=0.1.9
+
+# Optional — install only the provider you use in live mode
+langchain-openai>=0.2
+langchain-anthropic>=0.3

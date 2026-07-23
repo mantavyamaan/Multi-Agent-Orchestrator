@@ -12,6 +12,9 @@ START → Coordinator ─┬→ Researcher → Coordinator
                      └→ END
 ```
 
+### Session Persistence
+The orchestrator uses `AsyncSqliteSaver` to automatically persist graph state to a local `checkpoints.db`. This allows conversational contexts and multi-agent sessions to survive server restarts. During synchronous CLI usage or testing, it gracefully falls back to an ephemeral `MemorySaver`.
+
 ## Quick Start
 
 ```bash
@@ -55,9 +58,19 @@ pytest tests/ -v --cov=src --cov-report=term-missing
 | Test file | What it covers |
 |---|---|
 | `tests/test_graph.py` | Graph correctness, routing, safety limits (5 tests) |
-| `tests/test_api.py`   | API endpoints, input validation, SSE streaming (8 tests) |
+| `tests/test_api.py`   | API endpoints, input validation, SSE streaming (9 tests) |
 
-## Safety Limits (§5.11)
+## Security & Safety Limits
+
+### Security Measures
+
+| Layer | Implementation | Purpose |
+|---|---|---|
+| HTTP Headers | `Content-Security-Policy`, `X-Frame-Options` | Prevents XSS and clickjacking attacks |
+| User Input | Regex Sanitizer | Strips HTML and control characters before entering the graph |
+| Frontend | `DOMPurify` | Sanitizes all LLM markdown before DOM insertion |
+
+### Execution Safety Limits (§5.11)
 
 | Mechanism | Setting | Implementation |
 |---|---|---|

@@ -34,7 +34,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const resultsPanel  = document.getElementById('results-panel');
     const resultsContent = document.getElementById('results-content');
     const copyAllBtn    = document.getElementById('copy-all-btn');
-    const emptyState    = document.getElementById('empty-state');
 
     const errorPanel = document.getElementById('error-panel');
     const errorList  = document.getElementById('error-list');
@@ -291,7 +290,6 @@ document.addEventListener('DOMContentLoaded', () => {
         tracePanel.classList.remove('hidden');
         resultsPanel.classList.add('hidden');
         errorPanel.classList.add('hidden');
-        if (emptyState) emptyState.style.display = 'none';
         runMeta.style.display = 'none';
         stepCount = 0;
         stepCounter.textContent = 'Step 0';

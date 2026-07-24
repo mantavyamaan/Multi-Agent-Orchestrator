@@ -5,20 +5,20 @@
 
 /* ── Design Tokens ──────────────────────────────────────────────────────── */
 :root {
-    --bg:            #080c14;
-    --bg-alt:        #0d1220;
-    --surface:       rgba(255,255,255,0.035);
-    --surface-hover: rgba(255,255,255,0.06);
-    --border:        rgba(255,255,255,0.08);
-    --border-bright: rgba(255,255,255,0.18);
+    --bg:            #030712;       /* Very deep slate/black */
+    --bg-alt:        #0B0F19;
+    --surface:       rgba(255,255,255,0.02);
+    --surface-hover: rgba(255,255,255,0.04);
+    --border:        rgba(255,255,255,0.05);
+    --border-bright: rgba(255,255,255,0.12);
 
-    --txt:           #e2e8f0;
-    --txt-muted:     #64748b;
-    --txt-dim:       #334155;
+    --txt:           #f8fafc;
+    --txt-muted:     #94a3b8;
+    --txt-dim:       #475569;
 
-    --accent:        #6366f1;       /* indigo */
-    --accent-2:      #3b82f6;       /* blue */
-    --accent-glow:   rgba(99,102,241,0.4);
+    --accent:        #3b82f6;       /* Clean blue */
+    --accent-2:      #8b5cf6;       /* Violet */
+    --accent-glow:   rgba(59,130,246,0.25);
 
     --danger:        #ef4444;
     --danger-glow:   rgba(239,68,68,0.3);
@@ -55,38 +55,17 @@ body {
 .bg-canvas {
     position: fixed; inset: 0;
     z-index: 0; pointer-events: none;
-    overflow: hidden;
-}
-.orb {
-    position: absolute; border-radius: 50%;
-    filter: blur(90px); opacity: 0;
-    animation: drift 25s infinite alternate ease-in-out;
-}
-.orb-1 {
-    width: 55vw; height: 55vw; top: -15%; left: -10%;
-    background: radial-gradient(circle, rgba(99,102,241,0.25), transparent 70%);
-    animation-delay: 0s; opacity: 0.6;
-}
-.orb-2 {
-    width: 45vw; height: 45vw; bottom: -20%; right: -5%;
-    background: radial-gradient(circle, rgba(59,130,246,0.2), transparent 70%);
-    animation-delay: -12s; opacity: 0.5;
-}
-.orb-3 {
-    width: 30vw; height: 30vw; top: 50%; left: 40%;
-    background: radial-gradient(circle, rgba(236,72,153,0.12), transparent 70%);
-    animation-delay: -6s; opacity: 0.4;
+    background: radial-gradient(circle at 50% 0%, rgba(59,130,246,0.08) 0%, transparent 60%),
+                radial-gradient(circle at 80% 80%, rgba(139,92,246,0.05) 0%, transparent 50%);
 }
 .grid-overlay {
     position: absolute; inset: 0;
     background-image:
-        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
-    background-size: 60px 60px;
-}
-@keyframes drift {
-    0%   { transform: translate(0, 0) scale(1); }
-    100% { transform: translate(4%, 6%) scale(1.08); }
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+    background-size: 80px 80px;
+    mask-image: radial-gradient(ellipse at top, black 20%, transparent 70%);
+    -webkit-mask-image: radial-gradient(ellipse at top, black 20%, transparent 70%);
 }
 
 /* ── Toast Notifications ────────────────────────────────────────────────── */
@@ -245,41 +224,10 @@ body {
 
 /* ── Main Content ───────────────────────────────────────────────────────── */
 .main-content {
-    padding: 2rem 2.5rem;
-    display: flex; flex-direction: column; gap: 1.75rem;
-    max-width: 1600px; width: 100%; margin: 0 auto;
+    padding: 3rem 2.5rem;
+    display: flex; flex-direction: column; gap: 2rem;
+    max-width: 960px; width: 100%; margin: 0 auto;
 }
-
-/* ── Split Pane Layout ──────────────────────────────────────────────────── */
-.content-split {
-    display: grid;
-    grid-template-columns: 4fr 6fr; /* 40/60 Split */
-    gap: 2rem;
-    align-items: start;
-}
-.left-pane, .right-pane {
-    display: flex; flex-direction: column; gap: 1.75rem;
-}
-
-/* ── Empty State ────────────────────────────────────────────────────────── */
-.empty-state {
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 5rem 2rem; text-align: center;
-    background: var(--surface); border: 2px dashed var(--border);
-    border-radius: var(--radius); color: var(--txt-muted);
-    min-height: 350px; transition: var(--trans);
-}
-.empty-state:hover { border-color: var(--border-bright); }
-.empty-state-pulse {
-    margin-bottom: 1.25rem; color: var(--accent);
-    animation: emptyPulse 2.5s infinite ease-in-out;
-}
-@keyframes emptyPulse {
-    0%, 100% { opacity: 0.6; transform: scale(0.95); }
-    50% { opacity: 1; transform: scale(1.05); }
-}
-.empty-state h3 { font-size: 1.25rem; color: var(--txt); margin-bottom: 0.5rem; font-weight: 600; }
-.empty-state p { font-size: 0.95rem; line-height: 1.5; }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
 .top-header {
@@ -567,9 +515,6 @@ textarea:focus {
 .code-copy-btn.copied { color: var(--success); border-color: rgba(34,197,94,0.4); }
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */
-@media (max-width: 1100px) {
-    .content-split { grid-template-columns: 1fr; }
-}
 @media (max-width: 860px) {
     .app-shell { grid-template-columns: 1fr; }
     .sidebar {

@@ -51,15 +51,9 @@ document.addEventListener('DOMContentLoaded', () => {
     let stepCount = 0;
 
     /* ── Fetch mode on load ─────────────────────────────────────────────── */
-    fetch('/api/status')
-        .then(r => r.json())
-        .then(data => {
-            modeText.textContent = data.mode === 'live'
-                ? `Live · router:${data.router_model_name} | worker:${data.worker_model_name}`
-                : 'Mock mode';
-            modeBadge.classList.add(data.mode);
-        })
-        .catch(() => { modeText.textContent = 'Unknown'; });
+    // STATIC DEMO: Hardcoded status
+    modeText.textContent = 'Static Demo';
+    modeBadge.classList.add('live');
 
     /* ── Character counter ──────────────────────────────────────────────── */
     taskInput.addEventListener('input', () => {
@@ -305,63 +299,75 @@ document.addEventListener('DOMContentLoaded', () => {
         let finalMeta = null;
 
         try {
-            const response = await fetch('/api/run', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ task }),
-                signal: abortController.signal,
-            });
+            // STATIC DEMO: Mock Streamer
+            const delay = ms => new Promise(res => setTimeout(res, ms));
 
-            if (!response.ok) {
-                const err = await response.json().catch(() => ({ detail: response.statusText }));
-                throw new Error(err.detail || 'Server error');
-            }
+            const mockEvents = [
+                { node: 'coordinator', update: { next: 'researcher' }, delayMs: 400 },
+                { node: 'researcher',  update: null, delayMs: 1200 },
+                { node: 'coordinator', update: { next: 'coder' }, delayMs: 400 },
+                { node: 'coder',       update: null, delayMs: 1500 },
+                { node: 'coordinator', update: { next: 'reviewer' }, delayMs: 400 },
+                { node: 'reviewer',    update: null, delayMs: 1000 },
+                { node: 'coordinator', update: { next: 'finish' }, delayMs: 400 },
+                { 
+                    node: 'END', 
+                    update: { 
+                        status: "route:finish",
+                        step_count: 7,
+                        messages: [
+                            {
+                                name: "researcher",
+                                content: "```json\n{\n  \"topic\": \"Analyzed Objective\",\n  \"findings\": [\n    \"Determined the optimal approach for the user request\",\n    \"Gathered required dependencies\"\n  ],\n  \"sources\": [\"Mock Web Search\"]\n}\n```"
+                            },
+                            {
+                                name: "coder",
+                                content: "```json\n{\n  \"file_name\": \"solution.py\",\n  \"code\": \"def solve():\\n    print('This is a static demo!')\\n    # Go to GitHub and follow the instructions to enjoy the full model!\",\n  \"explanation\": \"Implemented the logic as requested.\"\n}\n```"
+                            },
+                            {
+                                name: "reviewer",
+                                content: "REVIEW VERDICT: pass. Findings: Code meets all requirements.\n\n**To run real prompts and use live LLMs, please go to GitHub and follow the Quick Start instructions to clone the repo and add your API key!**"
+                            }
+                        ]
+                    }, 
+                    meta: { step_count: 7, elapsed_seconds: 4.8, status: "completed" }, 
+                    delayMs: 200 
+                }
+            ];
 
-            const reader  = response.body.getReader();
-            const decoder = new TextDecoder();
-            let buffer = '';
+            for (const event of mockEvents) {
+                if (abortController.signal.aborted) throw new DOMException("Aborted", "AbortError");
+                await delay(event.delayMs);
+                if (abortController.signal.aborted) throw new DOMException("Aborted", "AbortError");
+                
+                const data = event;
 
-            while (true) {
-                const { value, done } = await reader.read();
-                if (done) break;
+                if (data.node === 'END') {
+                    finalMeta = data.meta;
+                    addNodeToTrace('End', 'node-end');
+                    Object.keys(agentCards).forEach(a => {
+                        const card = agentCards[a];
+                        if (card.classList.contains('running')) setAgentState(a, 'done');
+                    });
+                    renderFinalResults(data.update, data.meta);
+                    saveToHistory(task, data.meta?.status || 'completed');
+                    showToast('Workflow completed successfully', 'success');
 
-                buffer += decoder.decode(value, { stream: true });
-                const lines = buffer.split('\n');
-                buffer = lines.pop();
+                } else if (data.node === 'ERROR') {
+                    showToast(`Execution error: ${data.error}`, 'error', 6000);
+                    addNodeToTrace('Error', 'node-end');
+                    saveToHistory(task, 'error');
 
-                for (const line of lines) {
-                    if (!line.startsWith('data: ')) continue;
-                    try {
-                        const data = JSON.parse(line.slice(6));
+                } else {
+                    // Normal node transition
+                    stepCount++;
+                    stepCounter.textContent = `Step ${stepCount}`;
+                    const label = data.node.charAt(0).toUpperCase() + data.node.slice(1);
+                    addNodeToTrace(label, `node-${data.node}`);
 
-                        if (data.node === 'END') {
-                            finalMeta = data.meta;
-                            addNodeToTrace('End', 'node-end');
-                            Object.keys(agentCards).forEach(a => {
-                                const card = agentCards[a];
-                                if (card.classList.contains('running')) setAgentState(a, 'done');
-                            });
-                            renderFinalResults(data.update, data.meta);
-                            saveToHistory(task, data.meta?.status || 'completed');
-                            showToast('Workflow completed successfully', 'success');
-
-                        } else if (data.node === 'ERROR') {
-                            showToast(`Execution error: ${data.error}`, 'error', 6000);
-                            addNodeToTrace('Error', 'node-end');
-                            saveToHistory(task, 'error');
-
-                        } else {
-                            // Normal node transition
-                            stepCount++;
-                            stepCounter.textContent = `Step ${stepCount}`;
-                            const label = data.node.charAt(0).toUpperCase() + data.node.slice(1);
-                            addNodeToTrace(label, `node-${data.node}`);
-
-                            // Update sidebar agent card
-                            resetAgents();
-                            if (agentCards[data.node]) setAgentState(data.node, 'running');
-                        }
-                    } catch (_) { /* malformed JSON line — skip */ }
+                    // Update sidebar agent card
+                    resetAgents();
+                    if (agentCards[data.node]) setAgentState(data.node, 'running');
                 }
             }
 

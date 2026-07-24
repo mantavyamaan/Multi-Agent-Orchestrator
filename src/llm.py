@@ -13,7 +13,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from src.config import settings
-from src.schemas import ReviewDecision, RouteDecision
+from src.schemas import ReviewDecision, RouteDecision, ResearchArtifact, CoderArtifact
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +61,22 @@ class MockStructuredReviewer:
             required_next_agent="coordinator",
         )
 
+class MockStructuredResearcher:
+    def invoke(self, messages: list[dict[str, Any]]) -> ResearchArtifact:
+        return ResearchArtifact(
+            topic="Mock topic",
+            findings=["Mock finding 1", "Mock finding 2"],
+            sources=["Mock source 1"]
+        )
+
+class MockStructuredCoder:
+    def invoke(self, messages: list[dict[str, Any]]) -> CoderArtifact:
+        return CoderArtifact(
+            file_name="mock_file.py",
+            code="print('Hello World')",
+            explanation="Mock explanation of code"
+        )
+
 
 @dataclass
 class MockChatModel:
@@ -73,6 +89,10 @@ class MockChatModel:
             return MockStructuredRouter()
         if schema is ReviewDecision:
             return MockStructuredReviewer()
+        if schema is ResearchArtifact:
+            return MockStructuredResearcher()
+        if schema is CoderArtifact:
+            return MockStructuredCoder()
         raise ValueError(f"No mock available for schema {schema!r}")
 
     def invoke(self, messages: list[dict[str, Any]]) -> MockResponse:
@@ -102,11 +122,7 @@ class MockChatModel:
 # Factory
 # ---------------------------------------------------------------------------
 
-def get_model() -> Any:
-    if settings.mode == "mock":
-        logger.info("Model mode: mock (no API calls)")
-        return MockChatModel()
-
+def _get_live_model(model_name: str) -> Any:
     # Live mode — validate that a key exists before making any calls
     import os
     provider = settings.model_provider.lower()
@@ -130,9 +146,22 @@ def get_model() -> Any:
     except ImportError:
         from langchain_community.chat_models import init_chat_model  # type: ignore[no-redef]
 
-    logger.info("Model mode: live | provider=%s model=%s", provider, settings.model_name)
+    logger.info("Model mode: live | provider=%s model=%s", provider, model_name)
     return init_chat_model(
-        settings.model_name,
+        model_name,
         model_provider=settings.model_provider,
         temperature=0,
     )
+
+def get_router_model() -> Any:
+    if settings.mode == "mock":
+        logger.info("Router model mode: mock (no API calls)")
+        return MockChatModel()
+    return _get_live_model(settings.router_model_name)
+
+def get_worker_model() -> Any:
+    if settings.mode == "mock":
+        logger.info("Worker model mode: mock (no API calls)")
+        return MockChatModel()
+    return _get_live_model(settings.worker_model_name)
+

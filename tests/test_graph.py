@@ -14,7 +14,7 @@ from src.schemas import RouteDecision
 from src.state import initial_state
 
 def run(model, task="Research LangGraph and write a script for it"):
-    app = build_graph(model)
+    app = build_graph(model, model)
     config = {
         "configurable": {"thread_id": "test"},
         "recursion_limit": settings.max_steps * 3,

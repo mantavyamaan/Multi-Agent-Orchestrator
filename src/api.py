@@ -32,7 +32,7 @@ from sse_starlette.sse import EventSourceResponse
 
 from src.config import settings
 from src.graph import build_graph, _get_async_checkpointer
-from src.llm import get_model
+from src.llm import get_router_model, get_worker_model
 from src.state import initial_state
 
 logger = logging.getLogger(__name__)
@@ -59,12 +59,13 @@ async def lifespan(app: FastAPI):
     global _graph_app
     logger.info("Building LangGraph application (mode=%s)...", settings.mode)
     try:
-        model = get_model()
+        router_model = get_router_model()
+        worker_model = get_worker_model()
         # Allow tests (or integration harnesses) to inject their own checkpointer
         # by setting app.state.checkpointer_override before startup.
         override = getattr(app.state, "checkpointer_override", None)
         if override is not None:
-            _graph_app = build_graph(model, checkpointer=override)
+            _graph_app = build_graph(router_model, worker_model, checkpointer=override)
             logger.info("Graph ready (override checkpointer).")
             yield
         else:
@@ -72,11 +73,11 @@ async def lifespan(app: FastAPI):
             sqlite_cm = _get_async_checkpointer()
             if sqlite_cm is not None:
                 async with sqlite_cm as cp:
-                    _graph_app = build_graph(model, checkpointer=cp)
+                    _graph_app = build_graph(router_model, worker_model, checkpointer=cp)
                     logger.info("Graph ready (AsyncSqliteSaver).")
                     yield
             else:
-                _graph_app = build_graph(model)
+                _graph_app = build_graph(router_model, worker_model)
                 logger.info("Graph ready (MemorySaver fallback).")
                 yield
     except Exception as exc:
@@ -235,7 +236,8 @@ async def status():
     """Returns current configuration limits — useful for the UI mode badge."""
     return {
         "mode": settings.mode,
-        "model_name": settings.model_name if settings.mode == "live" else "mock",
+        "router_model_name": settings.router_model_name if settings.mode == "live" else "mock",
+        "worker_model_name": settings.worker_model_name if settings.mode == "live" else "mock",
         "model_provider": settings.model_provider if settings.mode == "live" else "mock",
         "max_steps": settings.max_steps,
         "max_errors": settings.max_errors,

@@ -13,7 +13,7 @@ import uuid
 
 from src.config import settings
 from src.graph import build_graph
-from src.llm import get_model
+from src.llm import get_router_model, get_worker_model
 from src.state import initial_state
 
 def run(task: str, verbose: bool = False) -> None:
@@ -23,7 +23,7 @@ def run(task: str, verbose: bool = False) -> None:
     )
 
     task_id = str(uuid.uuid4())[:8]
-    app = build_graph(get_model())
+    app = build_graph(get_router_model(), get_worker_model())
     config = {
         "configurable": {"thread_id": task_id},
         # Framework-level hard stop — independent of the coordinator (§5.11)

@@ -35,7 +35,7 @@ def _get_async_checkpointer():
     
     Usage (inside async with):
         async with _get_async_checkpointer() as cp:
-            graph = build_graph(model, checkpointer=cp)
+            graph = build_graph(router_model, worker_model, checkpointer=cp)
     """
     try:
         from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
@@ -49,21 +49,22 @@ def _get_async_checkpointer():
         return None
 
 
-def build_graph(model: Any, checkpointer: Any | None = None):
+def build_graph(router_model: Any, worker_model: Any, checkpointer: Any | None = None):
     """Build and compile the LangGraph StateGraph.
     
     Args:
-        model: The LLM model instance (mock or live).
+        router_model: The LLM used for routing (Coordinator).
+        worker_model: The LLM used for heavy lifting (Researcher, Coder, Reviewer).
         checkpointer: An already-instantiated checkpoint saver.
                       When None, uses MemorySaver (suitable for sync/test contexts).
                       For async (FastAPI), supply an AsyncSqliteSaver instance.
     """
     graph = StateGraph(MultiAgentState)
 
-    graph.add_node("coordinator", make_coordinator_node(model))
-    graph.add_node("researcher", make_researcher_node(model))
-    graph.add_node("coder", make_coder_node(model))
-    graph.add_node("reviewer", make_reviewer_node(model))
+    graph.add_node("coordinator", make_coordinator_node(router_model))
+    graph.add_node("researcher", make_researcher_node(worker_model))
+    graph.add_node("coder", make_coder_node(worker_model))
+    graph.add_node("reviewer", make_reviewer_node(worker_model))
 
     graph.add_edge(START, "coordinator")
 

@@ -9,6 +9,7 @@ from typing import Any, Callable
 
 from src.errors import ControlledNodeFailure, invoke_with_retry
 from src.state import MultiAgentState
+from src.schemas import CoderArtifact
 
 SYSTEM_PROMPT = """You are an implementation specialist in a multi-agent workflow.
 Using the user's objective and the researcher's findings already present in
@@ -23,8 +24,9 @@ def make_coder_node(model: Any) -> Callable[[MultiAgentState], dict]:
             *state["messages"],
         ]
         try:
-            result = invoke_with_retry(lambda: model.invoke(payload), node_name="coder")
-            content = result.content
+            structured_model = model.with_structured_output(CoderArtifact)
+            result = invoke_with_retry(lambda: structured_model.invoke(payload), node_name="coder")
+            content = result.model_dump_json(indent=2)
         except ControlledNodeFailure as exc:
             return {"errors": [str(exc)], "status": "coder_failed"}
 

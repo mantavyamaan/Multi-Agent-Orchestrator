@@ -20,7 +20,8 @@ class Settings(BaseSettings):
 
     # Execution mode
     agent_mode: str = Field(default="mock", alias="AGENT_MODE")
-    model_name: str = Field(default="gpt-4o-mini", alias="MODEL_NAME")
+    router_model_name: str = Field(default="gpt-4o-mini", alias="ROUTER_MODEL_NAME")
+    worker_model_name: str = Field(default="gpt-4o", alias="WORKER_MODEL_NAME")
     model_provider: str = Field(default="openai", alias="MODEL_PROVIDER")
 
     # Independent termination mechanisms (§5.11)

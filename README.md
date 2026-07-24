@@ -62,7 +62,8 @@ To make the agents actually think, write code, and execute your real prompts, yo
    ```env
    AGENT_MODE=live
    MODEL_PROVIDER=openai
-   MODEL_NAME=gpt-4o-mini
+   ROUTER_MODEL_NAME=gpt-4o-mini
+   WORKER_MODEL_NAME=gpt-4o
    OPENAI_API_KEY=sk-proj-your-real-api-key-here...
    ```
 
@@ -74,7 +75,7 @@ To make the agents actually think, write code, and execute your real prompts, yo
    ```
 
 4. **Verify in the UI**
-   Open `http://localhost:8000`. In the top-left corner of the sidebar, the Mode Badge should now have a green dot and say **"Live · gpt-4o-mini"** (or whichever model you chose). When you submit a task now, the real LLM will process it!
+   Open `http://localhost:8000`. In the top-left corner of the sidebar, the Mode Badge should now have a green dot and say **"Live · router:gpt-4o-mini | worker:gpt-4o"** (or whichever models you chose). When you submit a task now, the real LLM will process it!
 
 ## Tests
 
@@ -105,6 +106,7 @@ pytest tests/ -v --cov=src --cov-report=term-missing
 | Repeated-cycle detection | `MAX_CONSECUTIVE_REPEATS` | `route_history` tail check |
 | Error threshold | `MAX_ERRORS` | Forces controlled shutdown |
 | Invalid routing | — | Pydantic schema + bounded retry |
+| Hallucination Prevention | — | Structured Outputs (`.with_structured_output()`) enforced via Pydantic schemas |
 | Rate limiting | `RATE_LIMIT` | slowapi per-IP limiter on `/api/run` |
 | Human cancellation | — | UI Abort button / Ctrl-C |
 
@@ -125,8 +127,8 @@ Multi-Agent Orchestrator/
 │   ├── config.py       # pydantic-settings with validators
 │   ├── errors.py       # Bounded sync + async retry helpers
 │   ├── graph.py        # LangGraph StateGraph assembly
-│   ├── llm.py          # Mock/live model factory
-│   ├── schemas.py      # RouteDecision, ReviewDecision (Pydantic)
+│   ├── llm.py          # Separate Router/Worker model factories (Mock & Live)
+│   ├── schemas.py      # Pydantic Schemas (RouteDecision, ReviewDecision, ResearchArtifact, CoderArtifact)
 │   ├── state.py        # Shared state + reducers
 │   ├── main.py         # CLI entry point
 │   └── nodes/

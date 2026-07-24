@@ -129,10 +129,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ── Agent card state machine ───────────────────────────────────────── */
     const agentCards = {
-        coordinator: document.getElementById('card-coordinator'),
-        researcher:  document.getElementById('card-researcher'),
-        coder:       document.getElementById('card-coder'),
-        reviewer:    document.getElementById('card-reviewer'),
+        planner: document.getElementById('card-planner'),
+        scheduler: document.getElementById('card-scheduler'),
+        worker: document.getElementById('card-worker'),
     };
 
     const statusLabels = {
@@ -164,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const node = document.createElement('div');
         node.className = `trace-node ${colorClass} active`;
-        const icons = { coordinator:'🧠', researcher:'🔍', coder:'💻', reviewer:'✅', end:'🏁' };
+        const icons = { planner:'🧠', scheduler:'⚙️', worker:'🛠️', end:'🏁' };
         const key = text.toLowerCase();
         node.innerHTML = `${icons[key] || ''} ${text}`;
         traceBox.appendChild(node);
@@ -229,18 +228,25 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const relevant = ['researcher', 'coder', 'reviewer'];
-        const icons    = { researcher:'🔍', coder:'💻', reviewer:'✅' };
-
         finalState.messages.forEach(msg => {
-            if (!relevant.includes(msg.name)) return;
+            if (msg.role === 'user' || msg.name === 'user') return;
 
             const block = document.createElement('div');
             block.className = 'agent-result-block';
 
+            let labelClass = 'worker';
+            let icon = '🛠️';
+            if (msg.name === 'Planner') {
+                labelClass = 'planner';
+                icon = '🧠';
+            } else if (msg.name === 'Scheduler') {
+                labelClass = 'scheduler';
+                icon = '⚙️';
+            }
+
             const label = document.createElement('div');
-            label.className = `agent-label ${msg.name}`;
-            label.textContent = `${icons[msg.name] || ''} ${msg.name}`;
+            label.className = `agent-label ${labelClass}`;
+            label.textContent = `${icon} ${msg.name}`;
 
             const content = document.createElement('div');
             content.className = 'markdown-body';

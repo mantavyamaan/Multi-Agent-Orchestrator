@@ -123,10 +123,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     /* ── Agent card state machine ───────────────────────────────────────── */
     const agentCards = {
-        coordinator: document.getElementById('card-coordinator'),
-        researcher:  document.getElementById('card-researcher'),
-        coder:       document.getElementById('card-coder'),
-        reviewer:    document.getElementById('card-reviewer'),
+        planner: document.getElementById('card-planner'),
+        scheduler: document.getElementById('card-scheduler'),
+        worker: document.getElementById('card-worker'),
     };
 
     const statusLabels = {
@@ -158,7 +157,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const node = document.createElement('div');
         node.className = `trace-node ${colorClass} active`;
-        const icons = { coordinator:'🧠', researcher:'🔍', coder:'💻', reviewer:'✅', end:'🏁' };
+        const icons = { planner:'🧠', scheduler:'⚙️', worker:'🛠️', end:'🏁' };
         const key = text.toLowerCase();
         node.innerHTML = `${icons[key] || ''} ${text}`;
         traceBox.appendChild(node);
@@ -223,18 +222,25 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const relevant = ['researcher', 'coder', 'reviewer'];
-        const icons    = { researcher:'🔍', coder:'💻', reviewer:'✅' };
-
         finalState.messages.forEach(msg => {
-            if (!relevant.includes(msg.name)) return;
+            if (msg.role === 'user' || msg.name === 'user') return;
 
             const block = document.createElement('div');
             block.className = 'agent-result-block';
 
+            let labelClass = 'worker';
+            let icon = '🛠️';
+            if (msg.name === 'Planner') {
+                labelClass = 'planner';
+                icon = '🧠';
+            } else if (msg.name === 'Scheduler') {
+                labelClass = 'scheduler';
+                icon = '⚙️';
+            }
+
             const label = document.createElement('div');
-            label.className = `agent-label ${msg.name}`;
-            label.textContent = `${icons[msg.name] || ''} ${msg.name}`;
+            label.className = `agent-label ${labelClass}`;
+            label.textContent = `${icon} ${msg.name}`;
 
             const content = document.createElement('div');
             content.className = 'markdown-body';
@@ -306,34 +312,36 @@ document.addEventListener('DOMContentLoaded', () => {
             const delay = ms => new Promise(res => setTimeout(res, ms));
 
             const mockEvents = [
-                { node: 'coordinator', update: { next: 'researcher' }, delayMs: 400 },
-                { node: 'researcher',  update: null, delayMs: 1200 },
-                { node: 'coordinator', update: { next: 'coder' }, delayMs: 400 },
-                { node: 'coder',       update: null, delayMs: 1500 },
-                { node: 'coordinator', update: { next: 'reviewer' }, delayMs: 400 },
-                { node: 'reviewer',    update: null, delayMs: 1000 },
-                { node: 'coordinator', update: { next: 'finish' }, delayMs: 400 },
+                { node: 'planner', update: null, delayMs: 800 },
+                { node: 'scheduler',  update: null, delayMs: 400 },
+                { node: 'worker', update: null, delayMs: 1500 },
+                { node: 'scheduler',       update: null, delayMs: 400 },
+                { node: 'worker', update: null, delayMs: 1200 },
+                { node: 'scheduler',    update: null, delayMs: 400 },
                 { 
                     node: 'END', 
                     update: { 
-                        status: "route:finish",
-                        step_count: 7,
+                        status: "finished",
+                        step_count: 6,
                         messages: [
                             {
-                                name: "researcher",
-                                content: "```json\n{\n  \"topic\": \"Analyzed Objective\",\n  \"findings\": [\n    \"Determined the optimal approach for the user request\",\n    \"Gathered required dependencies\"\n  ],\n  \"sources\": [\"Mock Web Search\"]\n}\n```"
+                                name: "Planner",
+                                role: "system",
+                                content: "Generated DAG of 2 tasks: [Research Objective, Build Solution]"
                             },
                             {
-                                name: "coder",
-                                content: "```json\n{\n  \"file_name\": \"solution.py\",\n  \"code\": \"def solve():\\n    print('This is a static demo!')\\n    # Go to GitHub and follow the instructions to enjoy the full model!\",\n  \"explanation\": \"Implemented the logic as requested.\"\n}\n```"
+                                name: "Worker-t1",
+                                role: "system",
+                                content: "Task t1 completed:\nFound 3 relevant sources for the objective using Wikipedia Tool."
                             },
                             {
-                                name: "reviewer",
-                                content: "REVIEW VERDICT: pass. Findings: Code meets all requirements.\n\n**To run real prompts and use live LLMs, please go to GitHub and follow the Quick Start instructions to clone the repo and add your API key!**"
+                                name: "Worker-t2",
+                                role: "system",
+                                content: "Task t2 completed:\nSuccessfully built the solution using Python FileSystem Tool.\n\n**To run real prompts and use live LLMs, please go to GitHub and follow the Quick Start instructions to clone the repo and add your API key!**"
                             }
                         ]
                     }, 
-                    meta: { step_count: 7, elapsed_seconds: 4.8, status: "completed" }, 
+                    meta: { step_count: 6, elapsed_seconds: 4.7, status: "completed" }, 
                     delayMs: 200 
                 }
             ];

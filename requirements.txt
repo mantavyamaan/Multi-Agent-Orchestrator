@@ -17,3 +17,9 @@ slowapi>=0.1.9
 # Optional — install only the provider you use in live mode
 langchain-openai>=0.2
 langchain-anthropic>=0.3
+
+# Enterprise Runtime Tools & Memory
+chromadb>=0.5.0
+langchain-community>=0.2.0
+duckduckgo-search>=6.0
+wikipedia>=1.4.0

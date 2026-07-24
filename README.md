@@ -31,8 +31,8 @@ cp .env.example .env
 
 ```bash
 python -m src.api
-```
-Open **http://localhost:8000** — watch agents work in real-time with live trace, agent cards, and formatted results.
+```http://localhost:8000
+Open **** — watch agents work in real-time with live trace, agent cards, and formatted results.
 
 ### CLI
 

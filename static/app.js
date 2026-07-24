@@ -283,6 +283,9 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
+        // Hide keyboard on mobile to trigger zoom-out
+        taskInput.blur();
+
         // Reset UI
         traceBox.innerHTML = '';
         resultsContent.innerHTML = '';

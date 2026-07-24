@@ -531,6 +531,9 @@ textarea:focus {
     h1 { font-size: 1.5rem; }
 }
 @media (max-width: 560px) {
+    /* Prevent iOS auto-zoom by forcing 16px font size */
+    textarea { font-size: 16px; }
+
     .form-actions { flex-direction: column; }
     .quick-prompts .chip:nth-child(n+3) { display: none; }
     .top-header { flex-direction: column; }

@@ -2,20 +2,26 @@
 
 > **🌐 [Try the Live Demo →](https://mantavyamaan.github.io/Multi-Agent-Orchestrator/demo)**
 
-**Production-grade** coordinator-driven hub-and-spoke multi-agent AI system built on LangGraph.
-A central Coordinator routes work between specialist agents (Researcher, Coder, Reviewer) over a shared graph state, with real-time streaming to a glassmorphism web UI.
+**Production-grade** Enterprise AI Agentic Runtime built on LangGraph.
+The orchestrator leverages a **Map-Reduce DAG architecture** where a master **Planner** dynamically splits user objectives into dependent subtasks. A **Scheduler** analyzes the dependency graph and dispatches tasks to parallel **Workers**. Workers dynamically bind tools from a centralized registry based on their assigned capabilities, and possess long-term semantic memory powered by ChromaDB.
 
 ## Architecture
 
 ```
-START → Coordinator ─┬→ Researcher → Coordinator
-                     ├→ Coder      → Coordinator
-                     ├→ Reviewer   → Coordinator
-                     └→ END
+START → Planner ─→ Scheduler ─┬─(Send)→ Worker (Search)     ─┐
+                              ├─(Send)→ Worker (FileSystem) ─┼→ Scheduler → END
+                              └─(Send)→ Worker (Memory)     ─┘
 ```
 
+### Components
+1. **Planner (`src/nodes/planner.py`)**: Uses Structured Outputs to break the user's objective into an optimized Directed Acyclic Graph (DAG) of atomic sub-tasks with strict dependencies.
+2. **Scheduler (`src/nodes/scheduler.py`)**: Analyzes the graph state and dispatches ready tasks in parallel to generic workers using the LangGraph `Send` API.
+3. **Parallel Workers (`src/nodes/worker.py`)**: A dynamic execution environment (ReAct agent) that automatically binds required tools (Search, FileSystem, Memory) on the fly to complete a task.
+4. **Tool Registry (`src/tools/registry.py`)**: Central repository of agent capabilities.
+5. **Semantic Memory (`src/memory/vectorstore.py`)**: Local ChromaDB instance providing Episodic and Semantic memory (saving and retrieving past contexts across sessions).
+
 ### Session Persistence
-The orchestrator uses `AsyncSqliteSaver` to automatically persist graph state to a local `checkpoints.db`. This allows conversational contexts and multi-agent sessions to survive server restarts. During synchronous CLI usage or testing, it gracefully falls back to an ephemeral `MemorySaver`.
+The orchestrator uses `AsyncSqliteSaver` to automatically persist graph state to a local `checkpoints.db`. This allows conversational contexts and multi-agent sessions to survive server restarts.
 
 ## Quick Start
 
@@ -31,8 +37,8 @@ cp .env.example .env
 
 ```bash
 python -m src.api
-```http://localhost:8000
-Open **** — watch agents work in real-time with live trace, agent cards, and formatted results.
+```
+Open `http://localhost:8000` — watch the DAG resolve in real-time with live trace, agent cards, and formatted results.
 
 ### CLI
 
@@ -42,110 +48,58 @@ python -m src.main "Research LangGraph and write a script for it" --verbose
 
 ### 🧠 Switching to Live LLM Mode (Real AI)
 
-By default, the application runs in **Mock Mode** (`AGENT_MODE=mock`), which uses a hardcoded, deterministic dummy model that costs nothing and requires no API keys. It is perfect for testing the UI and seeing how the orchestrator graphs route tasks.
-
-To make the agents actually think, write code, and execute your real prompts, you must switch to **Live Mode**.
-
-**Step-by-Step Guide:**
+By default, the application runs in **Mock Mode** (`AGENT_MODE=mock`), which uses a deterministic dummy model. It is perfect for testing the UI and seeing how the orchestrator graphs route tasks. To make the agents actually think, write code, and execute your real prompts, switch to **Live Mode**.
 
 1. **Create the Environment File**
-   If you haven't already, copy the template file to create your own configuration file:
    ```bash
    cp .env.example .env
    ```
 
 2. **Configure the `.env` File**
-   Open the newly created `.env` file in your code editor and change the following settings:
-   - Change `AGENT_MODE=mock` to `AGENT_MODE=live`.
-   - Ensure `MODEL_PROVIDER` is set to your preferred provider (e.g., `openai`, `anthropic`).
-   - Add your real, active API key for that provider.
-
-   *Example of a working `.env` file for OpenAI:*
-   ```env
-   AGENT_MODE=live
-   MODEL_PROVIDER=openai
-   ROUTER_MODEL_NAME=gpt-4o-mini
-   WORKER_MODEL_NAME=gpt-4o
-   OPENAI_API_KEY=sk-proj-your-real-api-key-here...
-   ```
+   Open the `.env` file and set:
+   - `AGENT_MODE=live`
+   - `MODEL_PROVIDER=openai` (or `anthropic`, etc.)
+   - Add your API key (e.g. `OPENAI_API_KEY=sk-...`)
 
 3. **Restart the Server**
-   If your FastAPI server is currently running, stop it (press `Ctrl + C` in the terminal). 
-   Then, start it back up:
    ```bash
    python -m src.api
    ```
 
-4. **Verify in the UI**
-   Open `http://localhost:8000`. In the top-left corner of the sidebar, the Mode Badge should now have a green dot and say **"Live · router:gpt-4o-mini | worker:gpt-4o"** (or whichever models you chose). When you submit a task now, the real LLM will process it!
-
-## Tests
-
-```bash
-pytest tests/ -v --cov=src --cov-report=term-missing
-```
-
-| Test file | What it covers |
-|---|---|
-| `tests/test_graph.py` | Graph correctness, routing, safety limits (5 tests) |
-| `tests/test_api.py`   | API endpoints, input validation, SSE streaming (9 tests) |
-
 ## Security & Safety Limits
-
-### Security Measures
 
 | Layer | Implementation | Purpose |
 |---|---|---|
 | HTTP Headers | `Content-Security-Policy`, `X-Frame-Options` | Prevents XSS and clickjacking attacks |
-| User Input | Regex Sanitizer | Strips HTML and control characters before entering the graph |
 | Frontend | `DOMPurify` | Sanitizes all LLM markdown before DOM insertion |
-
-### Execution Safety Limits (§5.11)
-
-| Mechanism | Setting | Implementation |
-|---|---|---|
-| Step limit | `MAX_STEPS` | Enforced in code *before* the LLM is consulted |
-| Repeated-cycle detection | `MAX_CONSECUTIVE_REPEATS` | `route_history` tail check |
-| Error threshold | `MAX_ERRORS` | Forces controlled shutdown |
-| Invalid routing | — | Pydantic schema + bounded retry |
-| Hallucination Prevention | — | Structured Outputs (`.with_structured_output()`) enforced via Pydantic schemas |
-| Rate limiting | `RATE_LIMIT` | slowapi per-IP limiter on `/api/run` |
-| Human cancellation | — | UI Abort button / Ctrl-C |
-
-## API Endpoints
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/api/health` | Readiness + mode check |
-| GET | `/api/status` | Current config (mode, model, limits) |
-| POST | `/api/run` | Stream SSE execution trace |
+| DAG Cycles | `MAX_CONSECUTIVE_REPEATS` | Prevents infinite loops |
+| Hallucination Prevention | Pydantic Schemas | Forces the Planner to emit strict structured JSON |
+| Tool Isolation | Dynamic Registry | Workers are only granted the specific tools requested by the Planner |
 
 ## Project Structure
 
 ```
 Multi-Agent Orchestrator/
 ├── src/
-│   ├── api.py          # FastAPI server (CORS, rate limit, singleton graph)
-│   ├── config.py       # pydantic-settings with validators
-│   ├── errors.py       # Bounded sync + async retry helpers
-│   ├── graph.py        # LangGraph StateGraph assembly
-│   ├── llm.py          # Separate Router/Worker model factories (Mock & Live)
-│   ├── schemas.py      # Pydantic Schemas (RouteDecision, ReviewDecision, ResearchArtifact, CoderArtifact)
+│   ├── api.py          # FastAPI server (SSE streaming)
+│   ├── config.py       # pydantic-settings
+│   ├── graph.py        # LangGraph StateGraph assembly (Map-Reduce)
+│   ├── llm.py          # Model factories (Mock & Live)
+│   ├── schemas.py      # Pydantic Schemas (ExecutionPlan, SubTask)
 │   ├── state.py        # Shared state + reducers
 │   ├── main.py         # CLI entry point
+│   ├── memory/
+│   │   └── vectorstore.py # ChromaDB integration
+│   ├── tools/
+│   │   └── registry.py    # Search, FileSystem, and Memory tools
 │   └── nodes/
-│       ├── coordinator.py
-│       ├── researcher.py
-│       ├── coder.py
-│       └── reviewer.py
+│       ├── planner.py
+│       ├── scheduler.py
+│       └── worker.py
 ├── static/
-│   ├── index.html      # App shell (sidebar, agent cards, trace panel)
-│   ├── style.css       # Glassmorphism dark UI + responsive layout
-│   └── app.js          # SSE streaming, toasts, copy, history, abort
-├── tests/
-│   ├── test_graph.py   # Graph-level hypothesis tests
-│   └── test_api.py     # HTTP integration tests
-├── requirements.txt
-├── .env.example
-└── README.md
+│   ├── index.html      # App shell
+│   ├── style.css       # Glassmorphism dark UI
+│   └── app.js          # SSE trace parsing
+├── checkpoints.db      # LangGraph state persistence
+└── chroma_db/          # Semantic Memory vector database
 ```

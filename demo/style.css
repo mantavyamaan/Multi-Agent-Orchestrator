@@ -227,6 +227,7 @@ body {
     padding: 3rem 2.5rem;
     display: flex; flex-direction: column; gap: 2rem;
     max-width: 960px; width: 100%; margin: 0 auto;
+    min-width: 0;
 }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
@@ -255,6 +256,7 @@ h1 {
     padding: 1.75rem;
     box-shadow: 0 4px 24px rgba(0,0,0,0.25);
     transition: border-color var(--trans), box-shadow var(--trans);
+    max-width: 100%; min-width: 0; overflow-wrap: break-word;
 }
 .glass-panel:hover { border-color: var(--border-bright); }
 .panel-header {
@@ -397,7 +399,7 @@ textarea:focus {
     border-radius: var(--radius-xs);
     padding: 0.25rem 0.625rem;
 }
-.trace-scroll-container { overflow-x: auto; padding-bottom: 0.5rem; }
+.trace-scroll-container { overflow-x: auto; padding-bottom: 0.5rem; max-width: 100%; }
 .trace-container {
     display: flex; align-items: center; gap: 0.5rem;
     min-width: max-content;
@@ -495,6 +497,7 @@ textarea:focus {
     border-radius: var(--radius-sm);
     padding: 1.125rem 1rem;
     overflow-x: auto;
+    max-width: 100%;
     margin-bottom: 1rem;
 }
 .markdown-body pre code { background: none; padding: 0; font-size: 0.85rem; }

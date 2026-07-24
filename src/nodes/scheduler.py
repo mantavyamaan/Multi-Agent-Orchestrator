@@ -50,6 +50,9 @@ def route_from_scheduler(state: MultiAgentState):
     # Map-Reduce: Send parallel payloads to the worker node
     sends = []
     for t in running_tasks:
-        sends.append(Send("worker", {"active_subtask_id": t["id"]}))
+        sends.append(Send("worker", {
+            "active_subtask_id": t["id"],
+            "tasks": {t["id"]: t}
+        }))
         
     return sends

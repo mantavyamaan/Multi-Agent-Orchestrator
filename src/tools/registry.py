@@ -47,17 +47,23 @@ def read_file(file_path: str) -> str:
 @tool
 def save_memory(content: str) -> str:
     """Save an important fact or finding to long-term semantic memory for future retrieval."""
-    mem_id = str(uuid.uuid4())
-    semantic_memory.save(mem_id, content)
-    return f"Memory saved with ID {mem_id}"
+    try:
+        mem_id = str(uuid.uuid4())
+        semantic_memory.save(mem_id, content)
+        return f"Memory saved with ID {mem_id}"
+    except Exception as e:
+        return f"Failed to save memory: {e}"
 
 @tool
 def search_memory(query: str) -> str:
     """Search long-term semantic memory for past facts or context."""
-    results = semantic_memory.search(query)
-    if not results:
-        return "No relevant memories found."
-    return "\n\n".join([f"Memory {i+1}: {res}" for i, res in enumerate(results)])
+    try:
+        results = semantic_memory.search(query)
+        if not results:
+            return "No relevant memories found."
+        return "\n\n".join([f"Memory {i+1}: {res}" for i, res in enumerate(results)])
+    except Exception as e:
+        return f"Failed to search memory: {e}"
 
 # Capability Registry
 TOOL_REGISTRY = {

@@ -25,7 +25,8 @@ You have been granted capabilities: {task['required_capabilities']}
 
 Do your best to complete the objective using your tools. Return a clear, comprehensive final answer."""
         
-        if tools:
+        is_mock = getattr(llm, "is_mock", False)
+        if tools and not is_mock:
             agent = create_react_agent(llm, tools=tools)
             result_state = agent.invoke({"messages": [SystemMessage(content=prompt)]})
             final_output = result_state["messages"][-1].content

@@ -49,6 +49,7 @@ class MockStructuredPlanner:
 @dataclass
 class MockChatModel:
     """Minimal stand-in implementing the interface the nodes rely on."""
+    is_mock: bool = True
 
     def with_structured_output(self, schema: type) -> Any:
         if schema is ExecutionPlan:

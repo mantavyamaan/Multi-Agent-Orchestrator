@@ -247,8 +247,39 @@ body {
 .main-content {
     padding: 2rem 2.5rem;
     display: flex; flex-direction: column; gap: 1.75rem;
-    max-width: 900px;
+    max-width: 1600px; width: 100%; margin: 0 auto;
 }
+
+/* ── Split Pane Layout ──────────────────────────────────────────────────── */
+.content-split {
+    display: grid;
+    grid-template-columns: 4fr 6fr; /* 40/60 Split */
+    gap: 2rem;
+    align-items: start;
+}
+.left-pane, .right-pane {
+    display: flex; flex-direction: column; gap: 1.75rem;
+}
+
+/* ── Empty State ────────────────────────────────────────────────────────── */
+.empty-state {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 5rem 2rem; text-align: center;
+    background: var(--surface); border: 2px dashed var(--border);
+    border-radius: var(--radius); color: var(--txt-muted);
+    min-height: 350px; transition: var(--trans);
+}
+.empty-state:hover { border-color: var(--border-bright); }
+.empty-state-pulse {
+    margin-bottom: 1.25rem; color: var(--accent);
+    animation: emptyPulse 2.5s infinite ease-in-out;
+}
+@keyframes emptyPulse {
+    0%, 100% { opacity: 0.6; transform: scale(0.95); }
+    50% { opacity: 1; transform: scale(1.05); }
+}
+.empty-state h3 { font-size: 1.25rem; color: var(--txt); margin-bottom: 0.5rem; font-weight: 600; }
+.empty-state p { font-size: 0.95rem; line-height: 1.5; }
 
 /* ── Header ─────────────────────────────────────────────────────────────── */
 .top-header {
@@ -536,6 +567,9 @@ textarea:focus {
 .code-copy-btn.copied { color: var(--success); border-color: rgba(34,197,94,0.4); }
 
 /* ── Responsive ─────────────────────────────────────────────────────────── */
+@media (max-width: 1100px) {
+    .content-split { grid-template-columns: 1fr; }
+}
 @media (max-width: 860px) {
     .app-shell { grid-template-columns: 1fr; }
     .sidebar {
